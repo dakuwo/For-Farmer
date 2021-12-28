@@ -1,10 +1,160 @@
 <?php
 /*
-  Plugin Name: 農作物収穫時期
+  Plugin Name: 農作物の収穫時期表示
   Plugin URI:
-  Description: indexページに表示可能なバナーの設定
+  Description: 必要情報を入力することで、農作物の収穫時期をカレンダー形式で表示することができる
   Version: 1.0.0
-  Author: Kohei Okuda
-  Author URI: https://github.com/TomoakiTANAKA/CustomIndexBanner
+  Author: dakuwo
+  Author URI: https://github.com/dakuwo/For-Farmer/tree/main/wp-content/plugins/crops_harvest-time
   License: GPLv2
  */
+
+
+/* 管理画面表示 */
+add_action('init', 'CropsHarvestTime::init');
+
+class CropsHarvestTime
+{
+
+  //
+  const VERSION           = '1.0.0';
+  const PLUGIN_ID         = 'crops_harvest-time';
+  const CREDENTIAL_ACTION = self::PLUGIN_ID . '-nonce-action';
+  const CREDENTIAL_NAME   = self::PLUGIN_ID . '-nonce-key';
+  const PLUGIN_DB_PREFIX  = self::PLUGIN_ID . '_';
+  const CONFIG_MENU_SLUG  = self::PLUGIN_ID . '-config';
+  //
+
+  static function init()
+  {
+    return new self();
+  }
+
+  function __construct()
+  {
+    if (is_admin() && is_user_logged_in()) {
+      // メニュー追加
+      add_action('admin_menu', [$this, 'set_plugin_menu']);
+      add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
+      // コールバック関数定義
+      add_action('admin_init', [$this, 'add_config']);
+    }
+  }
+
+  function set_plugin_menu()
+  {
+    add_menu_page(
+      '農作物の収穫時期',           /* ページタイトル*/
+      '農作物の収穫時期',           /* メニュータイトル */
+      'manage_options',         /* 権限 */
+      'crops_harvest-time',    /* ページを開いたときのURL */
+      [$this, 'show_about_plugin'],       /* メニューに紐づく画面を描画するcallback関数 */
+      'dashicons-format-gallery', /* アイコン see: https://developer.wordpress.org/resource/dashicons/#awards */
+      99                          /* 表示位置のオフセット */
+    );
+  }
+  function set_plugin_sub_menu()
+  {
+
+    add_submenu_page(
+      'crops_harvest-time',  /* 親メニューのslug */
+      '新規追加',   /* ページタイトル */
+      '新規追加',   /* メニュータイトル */
+      'manage_options',     /* 権限 */
+      'crops_harvesrst-time-config',    /* ページを開いたときのURL */
+      [$this, 'show_config_form']    /* メニューに紐づく画面を描画するcallback関数 */
+    );
+  }
+
+
+  /** 農作物情報画面の表示 */
+  function show_about_plugin()
+  {
+?>
+
+<div class="wrap">
+    <h1>農作物情報</h1>
+    <p>農作物情報を元に収穫時期をカレンダー形式で表示します。</p>
+
+
+</div>
+
+<?php
+  }
+
+  function show_config_form()
+  {
+    // wp_optionsのデータをひっぱってくる
+    $title = get_option(self::PLUGIN_DB_PREFIX . "_title");
+  ?>
+
+<div class="wrap">
+    <h1>農作物情報の追加</h1>
+
+    <form action="" method='post' id="my-submenu-form">
+
+        <?php // ②：nonceの設定 
+        ?>
+        <?php wp_nonce_field(self::CREDENTIAL_ACTION, self::CREDENTIAL_NAME) ?>
+
+        <p>
+            <label for="vegetable">野菜　</label>
+            <input type=" text" name="vegetable" placeholder="例）野菜" value="<?= $title ?>" />
+        </p>
+
+        <P>
+            <label for="harvest-time">収穫期間　</label>
+            <select name="harvest-time">
+                <option value="">収穫期間を選択して下さい</option>
+                <option value="2W">2 Week</option>
+                <option value="1M">1 Month</option>
+                <option value="3M">3 Month</option>
+                <option value="6M">6 Month</option>
+            </select>
+        </p>
+
+        <P>
+            <label for="recommendation">オススメ表示　</label>
+            <input type="radio" name="recommendation" value="なし" checked> なし
+            <input type="radio" name="recommendation" value="あり"> あり
+        </P>
+
+        <P>
+            <label for="vegetable-image">野菜の画像　</label>
+            <input type="file" name="vegetable-image" accept="image/png, image/jpeg">
+        </P>
+
+        <p><input type='submit' value='追加' class='button button-primary button-large'></p>
+
+    </form>
+
+</div>
+<?php
+  }
+
+  /** 設定画面の項目データベースに追加する */
+  function add_config()
+  {
+
+    // nonceで設定したcredentialのチェック
+    if (isset($_POST[self::CREDENTIAL_NAME]) && $_POST[self::CREDENTIAL_NAME]) {
+      if (check_admin_referer(self::CREDENTIAL_ACTION, self::CREDENTIAL_NAME)) {
+
+        // 追加処理
+        $key =
+          $title = $_POST($value['title']) ? $_POST['title'] : "";
+
+        update_option(self::PLUGIN_DB_PREFIX . $key, $title);
+        $completed_text = "設定の保存が完了しました。管理画面にログインした状態で、トップページにアクセスし変更が正しく反映されたか確認してください。";
+
+        // 保存が完了したら、wordpressの機構を使って、一度だけメッセージを表示する
+        set_transient(self::COMPLETE_CONFIG, $completed_text, 5);
+
+        // 設定画面にリダイレクト
+        wp_safe_redirect(menu_page_url(self::CONFIG_MENU_SLUG), false);
+      }
+    }
+  }
+}
+
+?>
