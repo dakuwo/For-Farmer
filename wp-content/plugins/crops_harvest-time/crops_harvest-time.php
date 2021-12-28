@@ -98,8 +98,19 @@ class CropsData
 ?>
 
 <div class="wrap">
-    <h1>農作物情報</h1>
-    <p>農作物の情報を入力することで、農作物の収穫時期をカレンダー形式で表示します。</p>
+    <h1>農作物情報一覧</h1>
+    <p>農作物情報を元に収穫時期をカレンダー形式で表示します。</p>
+
+
+</div>
+
+<?php
+  }
+  function show_config_form()
+  {
+  ?>
+<div class="wrap">
+    <h1>農作物情報の追加</h1>
 
     <form action="" method='post' id="menu-form">
 
@@ -130,18 +141,11 @@ class CropsData
             <input type="file" name="vegetable-image" accept="image/png, image/jpeg">
         </P>
 
-        <p><input type='submit' value='保存' class='button button-primary button-large'></p>
+        <p><input type='submit' value='追加' class='button button-primary button-large'></p>
 
     </form>
+
 </div>
-
-<?php
-  }
-  function show_config_form()
-  {
-  ?>
-<h1>カスタムバナーの設定</h1>
-
 <?php
   }
 }
