@@ -11,10 +11,20 @@
 
 
 /* 管理画面表示 */
-add_action('init', 'CropsData::init');
+add_action('init', 'CropsHarvestTime::init');
 
-class CropsData
+class CropsHarvestTime
 {
+
+  //
+  const VERSION           = '1.0.0';
+  const PLUGIN_ID         = 'crops_harvest-time';
+  const CREDENTIAL_ACTION = self::PLUGIN_ID . '-nonce-action';
+  const CREDENTIAL_NAME   = self::PLUGIN_ID . '-nonce-key';
+  const PLUGIN_DB_PREFIX  = self::PLUGIN_ID . '_';
+  const CONFIG_MENU_SLUG  = self::PLUGIN_ID . '-config';
+  //
+
   static function init()
   {
     return new self();
@@ -26,6 +36,8 @@ class CropsData
       // メニュー追加
       add_action('admin_menu', [$this, 'set_plugin_menu']);
       add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
+      // コールバック関数定義
+      add_action('admin_init', [$this, 'add_config']);
     }
   }
 
@@ -46,50 +58,13 @@ class CropsData
 
     add_submenu_page(
       'crops_harvest-time',  /* 親メニューのslug */
-      '設定',   /* ページタイトル */
-      '設定',   /* メニュータイトル */
+      '新規追加',   /* ページタイトル */
+      '新規追加',   /* メニュータイトル */
       'manage_options',     /* 権限 */
       'crops_harvesrst-time-config',    /* ページを開いたときのURL */
       [$this, 'show_config_form']    /* メニューに紐づく画面を描画するcallback関数 */
     );
   }
-
-
-  /*register_activation_hook (__FILE__, 'crops_harvesttime_install');
-  register_uninstall_hook ( __FILE__, 'crops_hrvesttime_delete_data' );
-
-  /* 初回読み込み時にテーブル作成 */
-  function crops_harvesttime_install()
-  {
-    global $wpdb;
-
-    $table = $wpdb->prefix . 'crops_test';
-    $charset_collate = $wpdb->get_charset_collate();
-
-    if ($wpdb->get_var("show tables like '$table'") != $table) {
-
-      $sql = "CREATE TABLE  {$table} (
-              query_num int, 
-              file_name VARCHAR(400),
-              item1 VARCHAR(30),
-              item2 VARCHAR(30),
-              item3 VARCHAR(30)
-              ) $charset_collate;";
-
-      require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-      dbDelta($sql);
-    }
-  }
-
-  /* プラグイン削除時にはテーブルを削除 */
-  function crops_harvesttime_delete_data()
-  {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'crops_test';
-    $sql = "DROP TABLE IF EXISTS {$table_name}";
-    $wpdb->query($sql);
-  }
-
 
 
   /** 農作物情報画面の表示 */
@@ -98,7 +73,7 @@ class CropsData
 ?>
 
 <div class="wrap">
-    <h1>農作物情報一覧</h1>
+    <h1>農作物情報</h1>
     <p>農作物情報を元に収穫時期をカレンダー形式で表示します。</p>
 
 
@@ -106,17 +81,25 @@ class CropsData
 
 <?php
   }
+
   function show_config_form()
   {
+    // wp_optionsのデータをひっぱってくる
+    $title = get_option(self::PLUGIN_DB_PREFIX . "_title");
   ?>
+
 <div class="wrap">
     <h1>農作物情報の追加</h1>
 
-    <form action="" method='post' id="menu-form">
+    <form action="" method='post' id="my-submenu-form">
+
+        <?php // ②：nonceの設定 
+        ?>
+        <?php wp_nonce_field(self::CREDENTIAL_ACTION, self::CREDENTIAL_NAME) ?>
 
         <p>
             <label for="vegetable">野菜　</label>
-            <input type=" text" name="vegetable" placeholder="例）野菜" value="" />
+            <input type=" text" name="vegetable" placeholder="例）野菜" value="<?= $title ?>" />
         </p>
 
         <P>
@@ -148,5 +131,30 @@ class CropsData
 </div>
 <?php
   }
+
+  /** 設定画面の項目データベースに追加する */
+  function add_config()
+  {
+
+    // nonceで設定したcredentialのチェック
+    if (isset($_POST[self::CREDENTIAL_NAME]) && $_POST[self::CREDENTIAL_NAME]) {
+      if (check_admin_referer(self::CREDENTIAL_ACTION, self::CREDENTIAL_NAME)) {
+
+        // 追加処理
+        $key =
+          $title = $_POST($value['title']) ? $_POST['title'] : "";
+
+        update_option(self::PLUGIN_DB_PREFIX . $key, $title);
+        $completed_text = "設定の保存が完了しました。管理画面にログインした状態で、トップページにアクセスし変更が正しく反映されたか確認してください。";
+
+        // 保存が完了したら、wordpressの機構を使って、一度だけメッセージを表示する
+        set_transient(self::COMPLETE_CONFIG, $completed_text, 5);
+
+        // 設定画面にリダイレクト
+        wp_safe_redirect(menu_page_url(self::CONFIG_MENU_SLUG), false);
+      }
+    }
+  }
 }
+
 ?>
