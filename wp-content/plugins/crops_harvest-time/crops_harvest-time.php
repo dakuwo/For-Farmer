@@ -38,31 +38,43 @@ class CropsHarvestTime
       add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
       // コールバック関数定義
       add_action('admin_init', [$this, 'add_config']);
+      //テーブルの作成
+
     }
   }
 
   function set_plugin_menu()
   {
     add_menu_page(
-      '農作物の収穫時期',           /* ページタイトル*/
-      '農作物の収穫時期',           /* メニュータイトル */
-      'manage_options',         /* 権限 */
-      'crops_harvest-time',    /* ページを開いたときのURL */
-      [$this, 'show_about_plugin'],       /* メニューに紐づく画面を描画するcallback関数 */
-      'dashicons-format-gallery', /* アイコン see: https://developer.wordpress.org/resource/dashicons/#awards */
-      99                          /* 表示位置のオフセット */
+      '農作物の収穫時期', // page title
+      '農作物の収穫時期', // menu title
+      'manage_options', // capability
+      'crops_harvest-time', // slug
+      [$this, 'show_about_plugin'], // callback
+      'dashicons-calendar', // icon url（see: https://developer.wordpress.org/resource/dashicons/#awards ）
+      65 // position
+    );
+
+    add_submenu_page(
+      'crops_harvest-time', // parent slug
+      '農作物情報', // page title
+      '農作物情報', // menu title
+      'manage_options', // capability
+      'crops_harvest-time', // slug
+      [$this, 'show_about_plugin'] //callback
     );
   }
+
   function set_plugin_sub_menu()
   {
 
     add_submenu_page(
-      'crops_harvest-time',  /* 親メニューのslug */
-      '新規追加',   /* ページタイトル */
-      '新規追加',   /* メニュータイトル */
-      'manage_options',     /* 権限 */
-      'crops_harvesrst-time-config',    /* ページを開いたときのURL */
-      [$this, 'show_config_form']    /* メニューに紐づく画面を描画するcallback関数 */
+      'crops_harvest-time', // parent slug
+      '新規追加', // page title
+      '新規追加', // menu title
+      'manage_options', // capability
+      'crops_harvesrst-time-config', // slug
+      [$this, 'show_config_form'] //callback
     );
   }
 
@@ -85,7 +97,7 @@ class CropsHarvestTime
   function show_config_form()
   {
     // wp_optionsのデータをひっぱってくる
-    $title = get_option(self::PLUGIN_DB_PREFIX . "_title");
+    $title = get_option(self::PLUGIN_DB_PREFIX . "_vegetable");
   ?>
 
 <div class="wrap">
@@ -140,15 +152,10 @@ class CropsHarvestTime
     if (isset($_POST[self::CREDENTIAL_NAME]) && $_POST[self::CREDENTIAL_NAME]) {
       if (check_admin_referer(self::CREDENTIAL_ACTION, self::CREDENTIAL_NAME)) {
 
-        // 追加処理
-        $key =
-          $title = $_POST($value['title']) ? $_POST['title'] : "";
+        $title = $_POST['vegetable'];
 
-        update_option(self::PLUGIN_DB_PREFIX . $key, $title);
+        update_option(self::PLUGIN_DB_PREFIX . "_vegetable", $title);
         $completed_text = "設定の保存が完了しました。管理画面にログインした状態で、トップページにアクセスし変更が正しく反映されたか確認してください。";
-
-        // 保存が完了したら、wordpressの機構を使って、一度だけメッセージを表示する
-        set_transient(self::COMPLETE_CONFIG, $completed_text, 5);
 
         // 設定画面にリダイレクト
         wp_safe_redirect(menu_page_url(self::CONFIG_MENU_SLUG), false);
