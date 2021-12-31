@@ -19,10 +19,10 @@ class CropsHarvestTime
   //
   const VERSION           = '1.0.0';
   const PLUGIN_ID         = 'crops_harvest-time';
+  const CONFIG_MENU_SLUG  = self::PLUGIN_ID . '-config';
   const CREDENTIAL_ACTION = self::PLUGIN_ID . '-nonce-action';
   const CREDENTIAL_NAME   = self::PLUGIN_ID . '-nonce-key';
   const PLUGIN_DB_PREFIX  = self::PLUGIN_ID . '_';
-  const CONFIG_MENU_SLUG  = self::PLUGIN_ID . '-config';
   //
 
   static function init()
@@ -36,10 +36,13 @@ class CropsHarvestTime
       // メニュー追加
       add_action('admin_menu', [$this, 'set_plugin_menu']);
       add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
+
       // コールバック関数定義
       add_action('admin_init', [$this, 'add_config']);
       //テーブルの作成
-
+      add_action('admin_init', [$this, 'create_table']);
+      //初期データ登録
+      add_action('admin_init', [$this, 'set_initial_data']);
     }
   }
 
@@ -88,7 +91,6 @@ class CropsHarvestTime
     <h1>農作物情報</h1>
     <p>農作物情報を元に収穫時期をカレンダー形式で表示します。</p>
 
-
 </div>
 
 <?php
@@ -96,8 +98,6 @@ class CropsHarvestTime
 
   function show_config_form()
   {
-    // wp_optionsのデータをひっぱってくる
-    $title = get_option(self::PLUGIN_DB_PREFIX . "_vegetable");
   ?>
 
 <div class="wrap">
@@ -111,12 +111,12 @@ class CropsHarvestTime
 
         <p>
             <label for="vegetable">野菜　</label>
-            <input type=" text" name="vegetable" placeholder="例）野菜" value="<?= $title ?>" />
+            <input type=" text" name="vegetable" placeholder="例）野菜" value="" />
         </p>
 
         <P>
-            <label for="harvest-time">収穫期間　</label>
-            <select name="harvest-time">
+            <label for="harvesttime">収穫期間　</label>
+            <select name="harvesttime">
                 <option value="">収穫期間を選択して下さい</option>
                 <option value="2W">2 Week</option>
                 <option value="1M">1 Month</option>
@@ -145,23 +145,51 @@ class CropsHarvestTime
   }
 
   /** 設定画面の項目データベースに追加する */
-  function add_config()
+  //テーブルの作成
+  function create_table()
   {
+    global $wpdb;
+    global $jal_db_version;
 
-    // nonceで設定したcredentialのチェック
-    if (isset($_POST[self::CREDENTIAL_NAME]) && $_POST[self::CREDENTIAL_NAME]) {
-      if (check_admin_referer(self::CREDENTIAL_ACTION, self::CREDENTIAL_NAME)) {
+    $table_name = $wpdb->prefix . 'liveshoutbox';
 
-        $title = $_POST['vegetable'];
+    $charset_collate = $wpdb->get_charset_collate();
 
-        update_option(self::PLUGIN_DB_PREFIX . "_vegetable", $title);
-        $completed_text = "設定の保存が完了しました。管理画面にログインした状態で、トップページにアクセスし変更が正しく反映されたか確認してください。";
+    $sql = "CREATE TABLE $table_name (
+    id mediumint(9) NOT NULL AUTO_INCREMENT,
+    time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+    name tinytext NOT NULL,
+    text text NOT NULL,
+    url varchar(55) DEFAULT '' NOT NULL,
+    UNIQUE KEY id (id)
+  ) $charset_collate;";
 
-        // 設定画面にリダイレクト
-        wp_safe_redirect(menu_page_url(self::CONFIG_MENU_SLUG), false);
-      }
-    }
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+
+    add_option('jal_db_version', $jal_db_version);
+  }
+
+  //初期データを登録する
+  function set_initial_data()
+  {
+    global $wpdb;
+
+    $welcome_name = 'user_nicename さん';
+    $welcome_text = 'おめでとうございます、インストールに成功しました！';
+
+    $table_name = $wpdb->prefix . 'liveshoutbox';
+
+    $wpdb->insert(
+      $table_name,
+      array(
+        'time' => current_time('mysql'),
+        'name' => $welcome_name,
+        'text' => $welcome_text,
+      )
+    );
   }
 }
+
 
 ?>
