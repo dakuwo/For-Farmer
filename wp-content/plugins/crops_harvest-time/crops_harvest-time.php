@@ -19,10 +19,10 @@ class CropsHarvestTime
   //
   const VERSION           = '1.0.0';
   const PLUGIN_ID         = 'crops_harvest-time';
+  const CONFIG_MENU_SLUG  = self::PLUGIN_ID . '-config';
   const CREDENTIAL_ACTION = self::PLUGIN_ID . '-nonce-action';
   const CREDENTIAL_NAME   = self::PLUGIN_ID . '-nonce-key';
   const PLUGIN_DB_PREFIX  = self::PLUGIN_ID . '_';
-  const CONFIG_MENU_SLUG  = self::PLUGIN_ID . '-config';
   //
 
   static function init()
@@ -36,33 +36,48 @@ class CropsHarvestTime
       // メニュー追加
       add_action('admin_menu', [$this, 'set_plugin_menu']);
       add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
+
       // コールバック関数定義
       add_action('admin_init', [$this, 'add_config']);
+      //テーブルの作成
+      add_action('admin_init', [$this, 'create_table']);
+      //データ追加
+      add_action('admin_init', [$this, 'set_crops_data']);
     }
   }
 
   function set_plugin_menu()
   {
     add_menu_page(
-      '農作物の収穫時期',           /* ページタイトル*/
-      '農作物の収穫時期',           /* メニュータイトル */
-      'manage_options',         /* 権限 */
-      'crops_harvest-time',    /* ページを開いたときのURL */
-      [$this, 'show_about_plugin'],       /* メニューに紐づく画面を描画するcallback関数 */
-      'dashicons-format-gallery', /* アイコン see: https://developer.wordpress.org/resource/dashicons/#awards */
-      99                          /* 表示位置のオフセット */
+      '農作物の収穫時期', // page title
+      '農作物の収穫時期', // menu title
+      'manage_options', // capability
+      'crops_harvest-time', // slug
+      [$this, 'show_about_plugin'], // callback
+      'dashicons-calendar', // icon url（see: https://developer.wordpress.org/resource/dashicons/#awards ）
+      65 // position
+    );
+
+    add_submenu_page(
+      'crops_harvest-time', // parent slug
+      '農作物情報', // page title
+      '農作物情報', // menu title
+      'manage_options', // capability
+      'crops_harvest-time', // slug
+      [$this, 'show_about_plugin'] //callback
     );
   }
+
   function set_plugin_sub_menu()
   {
 
     add_submenu_page(
-      'crops_harvest-time',  /* 親メニューのslug */
-      '新規追加',   /* ページタイトル */
-      '新規追加',   /* メニュータイトル */
-      'manage_options',     /* 権限 */
-      'crops_harvesrst-time-config',    /* ページを開いたときのURL */
-      [$this, 'show_config_form']    /* メニューに紐づく画面を描画するcallback関数 */
+      'crops_harvest-time', // parent slug
+      '新規追加', // page title
+      '新規追加', // menu title
+      'manage_options', // capability
+      'crops_harvesrst-time-config', // slug
+      [$this, 'show_config_form'] //callback
     );
   }
 
@@ -76,7 +91,6 @@ class CropsHarvestTime
     <h1>農作物情報</h1>
     <p>農作物情報を元に収穫時期をカレンダー形式で表示します。</p>
 
-
 </div>
 
 <?php
@@ -84,8 +98,6 @@ class CropsHarvestTime
 
   function show_config_form()
   {
-    // wp_optionsのデータをひっぱってくる
-    $title = get_option(self::PLUGIN_DB_PREFIX . "_title");
   ?>
 
 <div class="wrap">
@@ -99,12 +111,17 @@ class CropsHarvestTime
 
         <p>
             <label for="vegetable">野菜　</label>
-            <input type=" text" name="vegetable" placeholder="例）野菜" value="<?= $title ?>" />
+            <input type="text" name="vegetable" placeholder="例）野菜" value="" />
+        </p>
+
+        <p>
+            <label for="harveststart">収穫開始日　</label>
+            <input type="date" name="harveststart" placeholder="年/月/日" value="" />
         </p>
 
         <P>
-            <label for="harvest-time">収穫期間　</label>
-            <select name="harvest-time">
+            <label for="harvesttime">収穫期間　</label>
+            <select name="harvesttime">
                 <option value="">収穫期間を選択して下さい</option>
                 <option value="2W">2 Week</option>
                 <option value="1M">1 Month</option>
@@ -133,28 +150,55 @@ class CropsHarvestTime
   }
 
   /** 設定画面の項目データベースに追加する */
-  function add_config()
+  //テーブルの作成
+  function create_table()
   {
+    global $wpdb;
+    global $jal_db_version;
 
-    // nonceで設定したcredentialのチェック
-    if (isset($_POST[self::CREDENTIAL_NAME]) && $_POST[self::CREDENTIAL_NAME]) {
-      if (check_admin_referer(self::CREDENTIAL_ACTION, self::CREDENTIAL_NAME)) {
+    $table_name = $wpdb->prefix . 'crops_data';
 
-        // 追加処理
-        $key =
-          $title = $_POST($value['title']) ? $_POST['title'] : "";
+    $charset_collate = $wpdb->get_charset_collate();
 
-        update_option(self::PLUGIN_DB_PREFIX . $key, $title);
-        $completed_text = "設定の保存が完了しました。管理画面にログインした状態で、トップページにアクセスし変更が正しく反映されたか確認してください。";
+    $sql = "CREATE TABLE $table_name (
+    id mediumint(9) NOT NULL AUTO_INCREMENT,
+    vegetable tinytext NOT NULL,
+    harveststart date NOT NULL,
+    harvesttime time NOT NULL,
+    recommendation text NOT NULL,
+    url varchar(55) DEFAULT '' NOT NULL,
+    UNIQUE KEY id (id)
+  ) $charset_collate;";
 
-        // 保存が完了したら、wordpressの機構を使って、一度だけメッセージを表示する
-        set_transient(self::COMPLETE_CONFIG, $completed_text, 5);
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
 
-        // 設定画面にリダイレクト
-        wp_safe_redirect(menu_page_url(self::CONFIG_MENU_SLUG), false);
-      }
-    }
+    add_option('jal_db_version', $jal_db_version);
+  }
+
+  //データを追加する
+  function set_crops_data()
+  {
+    global $wpdb;
+
+    $crops = $_POST['vegetable'];
+    $harveststart = $_POST['harveststart'];
+    $harvesttime = $_POST['harvesttime'];
+    $recommendation = $_POST['recommendation'];
+
+    $table_name = $wpdb->prefix . 'crops_data';
+
+    $wpdb->insert(
+      $table_name,
+      array(
+        'vegetable' => $crops,
+        'harveststart' => $harveststart,
+        'harvesttime' => $harvesttime,
+        'recommendation' => $recommendation,
+      )
+    );
   }
 }
+
 
 ?>
