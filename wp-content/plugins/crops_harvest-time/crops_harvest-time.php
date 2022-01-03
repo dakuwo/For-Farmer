@@ -41,8 +41,8 @@ class CropsHarvestTime
       add_action('admin_init', [$this, 'add_config']);
       //テーブルの作成
       add_action('admin_init', [$this, 'create_table']);
-      //初期データ登録
-      add_action('admin_init', [$this, 'set_initial_data']);
+      //データ追加
+      add_action('admin_init', [$this, 'set_crops_data']);
     }
   }
 
@@ -111,7 +111,12 @@ class CropsHarvestTime
 
         <p>
             <label for="vegetable">野菜　</label>
-            <input type=" text" name="vegetable" placeholder="例）野菜" value="" />
+            <input type="text" name="vegetable" placeholder="例）野菜" value="" />
+        </p>
+
+        <p>
+            <label for="harveststart">収穫開始日　</label>
+            <input type="date" name="harveststart" placeholder="年/月/日" value="" />
         </p>
 
         <P>
@@ -151,15 +156,16 @@ class CropsHarvestTime
     global $wpdb;
     global $jal_db_version;
 
-    $table_name = $wpdb->prefix . 'liveshoutbox';
+    $table_name = $wpdb->prefix . 'crops_data';
 
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE $table_name (
     id mediumint(9) NOT NULL AUTO_INCREMENT,
-    time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-    name tinytext NOT NULL,
-    text text NOT NULL,
+    vegetable tinytext NOT NULL,
+    harveststart date NOT NULL,
+    harvesttime time NOT NULL,
+    recommendation text NOT NULL,
     url varchar(55) DEFAULT '' NOT NULL,
     UNIQUE KEY id (id)
   ) $charset_collate;";
@@ -170,22 +176,25 @@ class CropsHarvestTime
     add_option('jal_db_version', $jal_db_version);
   }
 
-  //初期データを登録する
-  function set_initial_data()
+  //データを追加する
+  function set_crops_data()
   {
     global $wpdb;
 
-    $welcome_name = 'user_nicename さん';
-    $welcome_text = 'おめでとうございます、インストールに成功しました！';
+    $crops = $_POST['vegetable'];
+    $harveststart = $_POST['harveststart'];
+    $harvesttime = $_POST['harvesttime'];
+    $recommendation = $_POST['recommendation'];
 
-    $table_name = $wpdb->prefix . 'liveshoutbox';
+    $table_name = $wpdb->prefix . 'crops_data';
 
     $wpdb->insert(
       $table_name,
       array(
-        'time' => current_time('mysql'),
-        'name' => $welcome_name,
-        'text' => $welcome_text,
+        'vegetable' => $crops,
+        'harveststart' => $harveststart,
+        'harvesttime' => $harvesttime,
+        'recommendation' => $recommendation,
       )
     );
   }
