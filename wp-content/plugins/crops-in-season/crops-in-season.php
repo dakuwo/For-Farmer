@@ -1,29 +1,10 @@
 <?php
 
-/**
+/*
  * Plugin Name:       Crops in Season
- * Plugin URI:        
+ * Version:           1.0
  * Description:       必要情報を入力することで、旬の農作物について紹介します。
- * Requires at least: 
- * Requires PHP:      
  * Author:            dakuwo
- * Author URI:        https://github.com/dakuwo/For-Farmer/tree/main/wp-content/plugins/crops_harvest-time
- * Version:           1.0.0
- * Text Domain:       
- * Domain Path:       
- *
- * This is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
- *
- * This is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with WPForms. If not, see <https://www.gnu.org/licenses/>.
  */
 
 
@@ -284,7 +265,11 @@ class CropsInSeason
 
   //データを削除する
 
+
+
 }
+
+
 
 
   ?>
