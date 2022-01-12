@@ -8,19 +8,27 @@
  */
 
 
-/* 管理画面表示 */
+
+/* initial */
 add_action('init', 'CropsInSeason::init');
+
+/* activate */
+register_deactivation_hook(__FILE__, 'create_database');
+
+/* deactivate */
+register_deactivation_hook(__FILE__, 'drop_database');
+
 
 class CropsInSeason
 {
-
   //
-  const VERSION           = '1.0.0';
-  const PLUGIN_ID         = 'crops-in-season';
-  const CONFIG_MENU_SLUG  = self::PLUGIN_ID . '-config';
-  const CREDENTIAL_ACTION = self::PLUGIN_ID . '-nonce-action';
-  const CREDENTIAL_NAME   = self::PLUGIN_ID . '-nonce-key';
-  const PLUGIN_DB_PREFIX  = self::PLUGIN_ID . '_';
+  const VERSION              = '1.0';                                   //self::VERSION
+  const PLUGIN_ID            = 'cis';                                   //self::PLUGIN_ID
+  const CONFIG_MENU_SLUG     = 'crops-in-season';                       //self::CONFIG_MENU_SLUG
+  const CONFIG_SUBMENU_SLUG  = self::CONFIG_MENU_SLUG . '-config';      //self::CONFIG_SUBMENU_SLUG
+  const CREDENTIAL_ACTION    = self::PLUGIN_ID . '-nonce-action';       //self::CREDENTIAL_ACTION
+  const CREDENTIAL_NAME      = self::PLUGIN_ID . '-nonce-key';          //self::CREDENTIAL_NAME
+  const PLUGIN_DB_PREFIX     = self::PLUGIN_ID . '_crops_data';         //self::PLUGIN_DB_PREFIX
   //
 
   static function init()
@@ -34,15 +42,9 @@ class CropsInSeason
       // メニュー追加
       add_action('admin_menu', [$this, 'set_plugin_menu']);
       add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
-
-      // コールバック関数定義
-      // add_action('admin_init', [$this, 'add_config']);
-      //テーブルの作成
-      add_action('admin_init', [$this, 'create_table']);
-      //データ追加
-      add_action('admin_init', [$this, 'set_crops_data']);
     }
   }
+
 
   function set_plugin_menu()
   {
@@ -50,18 +52,18 @@ class CropsInSeason
       'Crops in Season', // page title
       'Crops in Season', // menu title
       'manage_options', // capability
-      'crops-in-season', // slug
+      self::CONFIG_MENU_SLUG, // slug
       [$this, 'show_about_plugin'], // callback
       'dashicons-calendar', // icon url（see: https://developer.wordpress.org/resource/dashicons/#awards ）
       65 // position
     );
 
     add_submenu_page(
-      'crops-in-season', // parent slug
+      self::CONFIG_MENU_SLUG, // parent slug
       '農作物情報', // page title
       '農作物情報', // menu title
       'manage_options', // capability
-      'crops-in-season', // slug
+      self::CONFIG_MENU_SLUG, // slug
       [$this, 'show_about_plugin'] //callback
     );
   }
@@ -70,11 +72,11 @@ class CropsInSeason
   {
 
     add_submenu_page(
-      'crops-in-season', // parent slug
+      self::CONFIG_MENU_SLUG, // parent slug
       '新規追加', // page title
       '新規追加', // menu title
       'manage_options', // capability
-      'crops-in-season-config', // slug
+      self::CONFIG_SUBMENU_SLUG, // slug
       [$this, 'show_config_form'] //callback
     );
   }
@@ -89,26 +91,103 @@ class CropsInSeason
     <h1>農作物情報</h1>
     <p>農作物情報を元に旬の農作物の紹介ページを作ります。</p>
 
-    <div>
-        <?php
-        if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
-          global $wpdb;
-          $query = "SELECT * FROM $wpdb->crops_data_table ORDER BY ID LIMIT 40;";
-          $results = $wpdb->get_results($query);
-          foreach ($results as $row) {
-            $id = $row->id;
-          }
-          echo "農作物：" . $results[1]->crops . nl2br("\n") . "紹介文：" . $results[1]->introduction;
-        endif;
-        ?>
-    </div>
-    <div>
-        <div>
-            <?php
-          echo "投稿抜粋：" . nl2br("\n")  . $results[1]->season;
-          ?>
-        </div>
-    </div>
+    <table>
+        <thread>
+            <tr>
+                <th>ID</th>
+                <th>農作物</th>
+                <th>紹介文</th>
+                <th>カテゴリ</th>
+                <th>農園</th>
+                <th>農家</th>
+            </tr>
+        </thread>
+
+        <?php for ($i = 1; $i <= 50; $i++) { ?>
+        <tbody>
+            <tr>
+                <td>
+                    <?php
+                if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
+                  global $wpdb;
+                  $table_name = $wpdb->prefix . self::PLUGIN_DB_PREFIX;
+                  $query = "SELECT * FROM $table_name WHERE id='$i' ORDER BY ID LIMIT 40;";
+                  $results = $wpdb->get_results($query);
+                  foreach ($results as $row) {
+                    echo $row->id;
+                  }
+                endif;
+                ?>
+                </td>
+                <td>
+                    <?php
+                if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
+                  global $wpdb;
+                  $table_name = $wpdb->prefix . self::PLUGIN_DB_PREFIX;
+                  $query = "SELECT * FROM $table_name WHERE id='$i' ORDER BY ID LIMIT 40;";
+                  $results = $wpdb->get_results($query);
+                  foreach ($results as $row) {
+                    echo $row->crops;
+                  }
+                endif;
+                ?>
+                </td>
+                <td>
+                    <?php
+                if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
+                  global $wpdb;
+                  $table_name = $wpdb->prefix . self::PLUGIN_DB_PREFIX;
+                  $query = "SELECT * FROM $table_name WHERE id='$i' ORDER BY ID LIMIT 40;";
+                  $results = $wpdb->get_results($query);
+                  foreach ($results as $row) {
+                    echo $row->introduction;
+                  }
+                endif;
+                ?>
+                </td>
+                <td>
+                    <?php
+                if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
+                  global $wpdb;
+                  $table_name = $wpdb->prefix . self::PLUGIN_DB_PREFIX;
+                  $query = "SELECT * FROM $table_name WHERE id='$i' ORDER BY ID LIMIT 40;";
+                  $results = $wpdb->get_results($query);
+                  foreach ($results as $row) {
+                    echo $row->category;
+                  }
+                endif;
+                ?>
+                </td>
+                <td>
+                    <?php
+                if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
+                  global $wpdb;
+                  $table_name = $wpdb->prefix . self::PLUGIN_DB_PREFIX;
+                  $query = "SELECT * FROM $table_name WHERE id='$i' ORDER BY ID LIMIT 40;";
+                  $results = $wpdb->get_results($query);
+                  foreach ($results as $row) {
+                    echo $row->farm;
+                  }
+                endif;
+                ?>
+                </td>
+                <td>
+                    <?php
+                if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
+                  global $wpdb;
+                  $table_name = $wpdb->prefix . self::PLUGIN_DB_PREFIX;
+                  $query = "SELECT * FROM $table_name WHERE id='$i' ORDER BY ID LIMIT 40;";
+                  $results = $wpdb->get_results($query);
+                  foreach ($results as $row) {
+                    echo $row->farmer;
+                  }
+                endif;
+                ?>
+                </td>
+            </tr>
+        </tbody>
+        <?php } ?>
+    </table>
 
     <?php
   }
@@ -182,93 +261,160 @@ class CropsInSeason
                 <input type="file" name="farmer-image" accept="image/png, image/jpeg">
             </P>
 
-            <p><input type='submit' value='追加' class='button button-primary button-large'></p>
+            <p><input type='submit' name='add' value='追加' class='button button-primary button-large'></p>
 
         </form>
 
     </div>
     <?php
   }
-
-  /** 設定画面の項目データベースに追加する */
-
-  //テーブルの作成
-  function create_table()
-  {
-    global $wpdb;
-    global $cropsdata_db_version;
-
-    $cropsdata_db_version = '1.0';
-
-    $table_name = $wpdb->prefix . 'crops_data_table';
-
-    $charset_collate = $wpdb->get_charset_collate();
-
-    $sql = "CREATE TABLE $table_name (
-    id mediumint(9) NOT NULL AUTO_INCREMENT,
-    crops tinytext NOT NULL,
-    introduction text NOT NULL,
-    season tinyint NOT NULL,
-    category tinytext NOT NULL,
-    farm tinytext NOT NULL,
-    farmer tinytext NOT NULL,
-    url varchar(55) DEFAULT '' NOT NULL,
-    UNIQUE KEY id (id)
-  ) $charset_collate;";
-
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
-
-    add_option('cropsdata_db_version', $cropsdata_db_version);
-  }
-
-
-  //テーブルを削除する
-  function drop_table()
-  {
-    global $wpdb;
-
-    $table_name = $wpdb->prefix . 'crops_data_table';
-
-    $wpdb->query("DROP TABLE IF EXISTS $table_name");
-
-    delete_option("cropsdata_db_version");
-  }
-
-
-  //データを追加する
-  function set_crops_data()
-  {
-    global $wpdb;
-
-    $crops = $_POST['crops'];
-    $introduction = $_POST['introduction'];
-    $season = $_POST['season'];
-    $category = $_POST['category'];
-    $farm = $_POST['farm'];
-    $farmer = $_POST['farmer'];
-
-    $table_name = $wpdb->prefix . 'crops_data_table';
-
-    $wpdb->insert(
-      $table_name,
-      array(
-        'crops' => $crops,
-        'introduction' => $introduction,
-        'season' => $season,
-        'category' => $category,
-        'farm' => $farm,
-        'farmer' => $farmer,
-      )
-    );
-  }
-
-  //データを削除する
-
-
-
 }
 
+
+// Create table when activate
+function create_table()
+{
+  global $wpdb;
+  global $cropsdata_db_version;
+
+  $db_version = '1.0';
+
+  $table_name = $wpdb->prefix . 'cis_crops_data';
+
+  $charset_collate = $wpdb->get_charset_collate();
+
+  $sql = "CREATE TABLE $table_name (
+   id mediumint(9) NOT NULL AUTO_INCREMENT,
+   crops tinytext NOT NULL,
+   introduction text NOT NULL,
+   season tinyint NOT NULL,
+   category tinytext NOT NULL,
+   farm tinytext NOT NULL,
+   farmer tinytext NOT NULL,
+   url varchar(55) DEFAULT '' NOT NULL,
+   UNIQUE KEY id (id)
+ ) $charset_collate;";
+
+  require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+  dbDelta($sql);
+
+  add_option('db_version', $db_version);
+}
+
+
+// Delete table when deactivate
+function drop_database()
+{
+  global $wpdb;
+  $table_name = $wpdb->prefix . 'cis_crops_data';
+  $sql = "DROP TABLE IF EXISTS $table_name;";
+  $wpdb->query($sql);
+  delete_option("cropsdata_db_version");
+}
+
+
+//Push add button
+if (isset($_POST['add'])) {
+
+  global $wpdb;
+
+  $crops = $_POST['crops'];
+  $introduction = $_POST['introduction'];
+  $season = $_POST['season'];
+  $category = $_POST['category'];
+  $farm = $_POST['farm'];
+  $farmer = $_POST['farmer'];
+
+  $table_name = $wpdb->prefix . 'cis_crops_data';
+
+  $wpdb->insert(
+    $table_name,
+    array(
+      'crops' => $crops,
+      'introduction' => $introduction,
+      'season' => $season,
+      'category' => $category,
+      'farm' => $farm,
+      'farmer' => $farmer,
+    )
+  );
+}
+
+//Shortcode
+add_shortcode('crops_data', 'display_crops_data');
+
+function display_crops_data($atts)
+{
+    ?>
+    <link rel="stylesheet" href="stylesheet.css">
+    <h2 class="crops">
+        <?php
+      global $wpdb;
+      $table_name = $wpdb->prefix . 'cis_crops_data';
+      $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
+      $results = $wpdb->get_results($query);
+      foreach ($results as $row) {
+        echo $row->crops;
+      }
+      ?>
+    </h2>
+
+    <div class="introduction">
+        <?php
+      global $wpdb;
+      $table_name = $wpdb->prefix . 'cis_crops_data';
+      $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
+      $results = $wpdb->get_results($query);
+      foreach ($results as $row) {
+        echo $row->introduction;
+      }
+      ?>
+    </div>
+
+    <ul class="season_1">
+        <li> 1月</li>
+        <li> 2月</li>
+        <li> 3月</li>
+        <li> 4月</li>
+        <li> 5月</li>
+        <li> 6月</li>
+    </ul>
+    <ul class="season_2">
+        <li> 7月</li>
+        <li> 8月</li>
+        <li> 9月</li>
+        <li>10月</li>
+        <li>11月</li>
+        <li>12月</li>
+    </ul>
+
+    <div class="farm">
+        <?php
+      global $wpdb;
+      $table_name = $wpdb->prefix . 'cis_crops_data';
+      $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
+      $results = $wpdb->get_results($query);
+      foreach ($results as $row) {
+        echo $row->farm;
+      }
+      ?>
+    </div>
+
+    <div class="farmer">
+        <?php
+      global $wpdb;
+      $table_name = $wpdb->prefix . 'cis_crops_data';
+      $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
+      $results = $wpdb->get_results($query);
+      foreach ($results as $row) {
+        echo $row->farmer;
+      }
+      ?>
+    </div>
+
+    <?php
+
+}
 
 
 
