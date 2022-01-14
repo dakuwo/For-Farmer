@@ -13,7 +13,7 @@
 add_action('init', 'CropsInSeason::init');
 
 /* activate */
-register_deactivation_hook(__FILE__, 'create_database');
+//register_deactivation_hook(__FILE__, 'create_database');
 
 /* deactivate */
 register_deactivation_hook(__FILE__, 'drop_database');
@@ -39,6 +39,8 @@ class CropsInSeason
   function __construct()
   {
     if (is_admin() && is_user_logged_in()) {
+      // テーブル作成
+      add_action('admin_menu', [$this, 'Create_table']);
       // メニュー追加
       add_action('admin_menu', [$this, 'set_plugin_menu']);
       add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
@@ -46,6 +48,37 @@ class CropsInSeason
   }
 
 
+  // Create table when activate
+  function create_table()
+  {
+    global $wpdb;
+    global $db_version;
+
+    $db_version = '1.0';
+
+    $table_name = $wpdb->prefix . self::PLUGIN_DB_PREFIX;
+
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE $table_name (
+   id mediumint(9) NOT NULL AUTO_INCREMENT,
+   crops tinytext NOT NULL,
+   introduction text NOT NULL,
+   season tinyint NOT NULL,
+   category tinytext NOT NULL,
+   farm tinytext NOT NULL,
+   farmer tinytext NOT NULL,
+   url varchar(55) DEFAULT '' NOT NULL,
+   UNIQUE KEY id (id)
+ ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+
+    add_option('db_version', $db_version);
+  }
+
+  // Admin Menu
   function set_plugin_menu()
   {
     add_menu_page(
@@ -68,6 +101,7 @@ class CropsInSeason
     );
   }
 
+  // Admin Submenu
   function set_plugin_sub_menu()
   {
 
@@ -89,7 +123,12 @@ class CropsInSeason
 
 <div class="wrap">
     <h1>農作物情報</h1>
-    <p>農作物情報を元に旬の農作物の紹介ページを作ります。</p>
+    <p>
+        農作物情報を元に旬の農作物の紹介ページを作り、ショートコードとして利用できます。
+        <br>
+        （例）[crops_data 〇]　〇＝ID番号(半角)
+    </p>
+
 
     <table>
         <thread>
@@ -271,35 +310,6 @@ class CropsInSeason
 }
 
 
-// Create table when activate
-function create_table()
-{
-  global $wpdb;
-  global $cropsdata_db_version;
-
-  $db_version = '1.0';
-
-  $table_name = $wpdb->prefix . 'cis_crops_data';
-
-  $charset_collate = $wpdb->get_charset_collate();
-
-  $sql = "CREATE TABLE $table_name (
-   id mediumint(9) NOT NULL AUTO_INCREMENT,
-   crops tinytext NOT NULL,
-   introduction text NOT NULL,
-   season tinyint NOT NULL,
-   category tinytext NOT NULL,
-   farm tinytext NOT NULL,
-   farmer tinytext NOT NULL,
-   url varchar(55) DEFAULT '' NOT NULL,
-   UNIQUE KEY id (id)
- ) $charset_collate;";
-
-  require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-  dbDelta($sql);
-
-  add_option('db_version', $db_version);
-}
 
 
 // Delete table when deactivate
@@ -309,7 +319,7 @@ function drop_database()
   $table_name = $wpdb->prefix . 'cis_crops_data';
   $sql = "DROP TABLE IF EXISTS $table_name;";
   $wpdb->query($sql);
-  delete_option("cropsdata_db_version");
+  delete_option("db_version");
 }
 
 
