@@ -13,10 +13,9 @@
 add_action('init', 'CropsInSeason::init');
 
 /* activate */
-//register_deactivation_hook(__FILE__, 'create_database');
 
 /* deactivate */
-register_deactivation_hook(__FILE__, 'drop_database');
+register_deactivation_hook(__FILE__, 'CropsInSeason::drop_database');
 
 
 class CropsInSeason
@@ -40,10 +39,11 @@ class CropsInSeason
   {
     if (is_admin() && is_user_logged_in()) {
       // テーブル作成
-      add_action('admin_menu', [$this, 'Create_table']);
+      // add_action('admin_menu', [$this, 'create_table']);
       // メニュー追加
       add_action('admin_menu', [$this, 'set_plugin_menu']);
       add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
+      register_activation_hook(__FILE__, [$this, 'create_table']);
     }
   }
 
@@ -64,7 +64,7 @@ class CropsInSeason
    id mediumint(9) NOT NULL AUTO_INCREMENT,
    crops tinytext NOT NULL,
    introduction text NOT NULL,
-   season tinyint NOT NULL,
+   season tinytext NOT NULL,
    category tinytext NOT NULL,
    farm tinytext NOT NULL,
    farmer tinytext NOT NULL,
@@ -257,18 +257,18 @@ class CropsInSeason
 
             <P>
                 <label for="season">旬：　</label>
-                <input type="checkbox" name="season" value="1"> 1月　
-                <input type="checkbox" name="season" value="2"> 2月　
-                <input type="checkbox" name="season" value="3"> 3月　
-                <input type="checkbox" name="season" value="4"> 4月　
-                <input type="checkbox" name="season" value="5"> 5月　
-                <input type="checkbox" name="season" value="6"> 6月　
-                <input type="checkbox" name="season" value="7"> 7月　
-                <input type="checkbox" name="season" value="8"> 8月　
-                <input type="checkbox" name="season" value="9"> 9月　
-                <input type="checkbox" name="season" value="10"> 10月　
-                <input type="checkbox" name="season" value="11"> 11月　
-                <input type="checkbox" name="season" value="12"> 12月　
+                <input type="checkbox" name="season[]" value="1"> 1月　
+                <input type="checkbox" name="season[]" value="2"> 2月　
+                <input type="checkbox" name="season[]" value="3"> 3月　
+                <input type="checkbox" name="season[]" value="4"> 4月　
+                <input type="checkbox" name="season[]" value="5"> 5月　
+                <input type="checkbox" name="season[]" value="6"> 6月　
+                <input type="checkbox" name="season[]" value="7"> 7月　
+                <input type="checkbox" name="season[]" value="8"> 8月　
+                <input type="checkbox" name="season[]" value="9"> 9月　
+                <input type="checkbox" name="season[]" value="10"> 10月　
+                <input type="checkbox" name="season[]" value="11"> 11月　
+                <input type="checkbox" name="season[]" value="12"> 12月　
             </P>
 
             <P>
@@ -328,9 +328,10 @@ if (isset($_POST['add'])) {
 
   global $wpdb;
 
+  $arr = $_POST['season'];
   $crops = $_POST['crops'];
   $introduction = $_POST['introduction'];
-  $season = $_POST['season'];
+  $season = implode(",", $_POST['season']);
   $category = $_POST['category'];
   $farm = $_POST['farm'];
   $farmer = $_POST['farmer'];
