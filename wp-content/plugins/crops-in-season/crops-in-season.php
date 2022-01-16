@@ -13,7 +13,7 @@
 add_action('init', 'CropsInSeason::init');
 
 /* activate */
-//register_deactivation_hook(__FILE__, 'create_database');
+//register_activation_hook(__FILE__, 'create_database');
 
 /* deactivate */
 register_deactivation_hook(__FILE__, 'drop_database');
@@ -40,7 +40,7 @@ class CropsInSeason
   {
     if (is_admin() && is_user_logged_in()) {
       // テーブル作成
-      add_action('admin_menu', [$this, 'Create_table']);
+      add_action('admin_menu', [$this, 'create_table']);
       // メニュー追加
       add_action('admin_menu', [$this, 'set_plugin_menu']);
       add_action('admin_menu', [$this, 'set_plugin_sub_menu']);
@@ -64,7 +64,7 @@ class CropsInSeason
    id mediumint(9) NOT NULL AUTO_INCREMENT,
    crops tinytext NOT NULL,
    introduction text NOT NULL,
-   season tinyint NOT NULL,
+   season tinytext NOT NULL,
    category tinytext NOT NULL,
    farm tinytext NOT NULL,
    farmer tinytext NOT NULL,
@@ -136,6 +136,7 @@ class CropsInSeason
                 <th>ID</th>
                 <th>農作物</th>
                 <th>紹介文</th>
+                <th>旬</th>
                 <th>カテゴリ</th>
                 <th>農園</th>
                 <th>農家</th>
@@ -180,6 +181,19 @@ class CropsInSeason
                   $results = $wpdb->get_results($query);
                   foreach ($results as $row) {
                     echo $row->introduction;
+                  }
+                endif;
+                ?>
+                </td>
+                <td>
+                    <?php
+                if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
+                  global $wpdb;
+                  $table_name = $wpdb->prefix . self::PLUGIN_DB_PREFIX;
+                  $query = "SELECT * FROM $table_name WHERE id='$i' ORDER BY ID LIMIT 40;";
+                  $results = $wpdb->get_results($query);
+                  foreach ($results as $row) {
+                    echo $row->season;
                   }
                 endif;
                 ?>
@@ -257,18 +271,18 @@ class CropsInSeason
 
             <P>
                 <label for="season">旬：　</label>
-                <input type="checkbox" name="season" value="1"> 1月　
-                <input type="checkbox" name="season" value="2"> 2月　
-                <input type="checkbox" name="season" value="3"> 3月　
-                <input type="checkbox" name="season" value="4"> 4月　
-                <input type="checkbox" name="season" value="5"> 5月　
-                <input type="checkbox" name="season" value="6"> 6月　
-                <input type="checkbox" name="season" value="7"> 7月　
-                <input type="checkbox" name="season" value="8"> 8月　
-                <input type="checkbox" name="season" value="9"> 9月　
-                <input type="checkbox" name="season" value="10"> 10月　
-                <input type="checkbox" name="season" value="11"> 11月　
-                <input type="checkbox" name="season" value="12"> 12月　
+                <input type="checkbox" name="season[]" value="1"> 1月　
+                <input type="checkbox" name="season[]" value="2"> 2月　
+                <input type="checkbox" name="season[]" value="3"> 3月　
+                <input type="checkbox" name="season[]" value="4"> 4月　
+                <input type="checkbox" name="season[]" value="5"> 5月　
+                <input type="checkbox" name="season[]" value="6"> 6月　
+                <input type="checkbox" name="season[]" value="7"> 7月　
+                <input type="checkbox" name="season[]" value="8"> 8月　
+                <input type="checkbox" name="season[]" value="9"> 9月　
+                <input type="checkbox" name="season[]" value="10"> 10月　
+                <input type="checkbox" name="season[]" value="11"> 11月　
+                <input type="checkbox" name="season[]" value="12"> 12月　
             </P>
 
             <P>
@@ -330,7 +344,7 @@ if (isset($_POST['add'])) {
 
   $crops = $_POST['crops'];
   $introduction = $_POST['introduction'];
-  $season = $_POST['season'];
+  $season = implode(",", $_POST['season']);
   $category = $_POST['category'];
   $farm = $_POST['farm'];
   $farmer = $_POST['farmer'];
@@ -350,82 +364,70 @@ if (isset($_POST['add'])) {
   );
 }
 
-//Shortcode
+// Shortcode
 add_shortcode('crops_data', 'display_crops_data');
 
 function display_crops_data($atts)
 {
+  global $wpdb;
+  $table_name = $wpdb->prefix . 'cis_crops_data';
+  $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
+  $results = $wpdb->get_results($query);
+  foreach ($results as $row) {
     ?>
-    <link rel="stylesheet" href="stylesheet.css">
     <h2 class="crops">
-        <?php
-      global $wpdb;
-      $table_name = $wpdb->prefix . 'cis_crops_data';
-      $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
-      $results = $wpdb->get_results($query);
-      foreach ($results as $row) {
-        echo $row->crops;
-      }
-      ?>
+        <?php echo $row->crops; ?>
     </h2>
 
     <div class="introduction">
-        <?php
-      global $wpdb;
-      $table_name = $wpdb->prefix . 'cis_crops_data';
-      $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
-      $results = $wpdb->get_results($query);
-      foreach ($results as $row) {
-        echo $row->introduction;
-      }
-      ?>
-    </div>
-
-    <ul class="season_1">
-        <li> 1月</li>
-        <li> 2月</li>
-        <li> 3月</li>
-        <li> 4月</li>
-        <li> 5月</li>
-        <li> 6月</li>
-    </ul>
-    <ul class="season_2">
-        <li> 7月</li>
-        <li> 8月</li>
-        <li> 9月</li>
-        <li>10月</li>
-        <li>11月</li>
-        <li>12月</li>
-    </ul>
-
-    <div class="farm">
-        <?php
-      global $wpdb;
-      $table_name = $wpdb->prefix . 'cis_crops_data';
-      $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
-      $results = $wpdb->get_results($query);
-      foreach ($results as $row) {
-        echo $row->farm;
-      }
-      ?>
-    </div>
-
-    <div class="farmer">
-        <?php
-      global $wpdb;
-      $table_name = $wpdb->prefix . 'cis_crops_data';
-      $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
-      $results = $wpdb->get_results($query);
-      foreach ($results as $row) {
-        echo $row->farmer;
-      }
-      ?>
+        <?php echo $row->introduction; ?>
     </div>
 
     <?php
+      /*if (in_array("1", $row->season)) {
+        add_action('wp_enqueue_scripts', 'add_style_jan');
+      }*/
+      ?>
 
+    <ul class="season_1">
+        <li class="jan"> 1月</li>
+        <li class="feb"> 2月</li>
+        <li class="mar"> 3月</li>
+        <li class="apr"> 4月</li>
+        <li class="may"> 5月</li>
+        <li class="jun"> 6月</li>
+    </ul>
+    <ul class="season_2">
+        <li class="jul"> 7月</li>
+        <li class="aug"> 8月</li>
+        <li class="sep"> 9月</li>
+        <li class="oct">10月</li>
+        <li class="nov">11月</li>
+        <li class="dec">12月</li>
+    </ul>
+
+    <div class="farm">
+        <?php echo $row->farm; ?>
+    </div>
+
+    <div class="farmer">
+        <?php echo $row->farmer; ?>
+    </div>
+
+    <?php
+  }
 }
 
+// CSS
+add_action('wp_enqueue_scripts', 'add_style');
 
+function add_style()
+{
+  wp_enqueue_style('cis_plugin_style', plugins_url('/style.css', __FILE__));
+}
 
+function add_style_jan()
+{
+  wp_enqueue_style('cis_plugin_style_jan', plugins_url('/jan.css', __FILE__));
+}
   ?>
