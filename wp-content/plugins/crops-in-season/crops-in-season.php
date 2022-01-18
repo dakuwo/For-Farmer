@@ -375,35 +375,77 @@ function display_crops_data($atts)
   $results = $wpdb->get_results($query);
   foreach ($results as $row) {
     ?>
-    <h2 class="crops">
+    <div class="<?php
+                  if ($row->category == "organic") {
+                    echo "crops-image-wrapper";
+                  } ?>">
+        <h3 class="<?php
+                    if ($row->category == "organic") {
+                      echo "crops-image";
+                    } ?>"><?php echo $row->category; ?></h3>
+
+    </div>
+
+    <div class="crops">
         <?php echo $row->crops; ?>
-    </h2>
+    </div>
 
     <div class="introduction">
         <?php echo $row->introduction; ?>
     </div>
 
-    <?php
-      /*if (in_array("1", $row->season)) {
-        add_action('wp_enqueue_scripts', 'add_style_jan');
-      }*/
-      ?>
-
-    <ul class="season_1">
-        <li class="jan"> 1月</li>
-        <li class="feb"> 2月</li>
-        <li class="mar"> 3月</li>
-        <li class="apr"> 4月</li>
-        <li class="may"> 5月</li>
-        <li class="jun"> 6月</li>
+    <?php $season_array = explode(',', $row->season); ?>
+    <ul class="season">
+        <li class="<?php
+                    if (in_array("1", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 1月</li>
+        <li class="<?php
+                    if (in_array("2", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 2月</li>
+        <li class="<?php
+                    if (in_array("3", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 3月</li>
+        <li class="<?php
+                    if (in_array("4", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 4月</li>
+        <li class="<?php
+                    if (in_array("5", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 5月</li>
+        <li class="<?php
+                    if (in_array("6", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 6月</li>
     </ul>
-    <ul class="season_2">
-        <li class="jul"> 7月</li>
-        <li class="aug"> 8月</li>
-        <li class="sep"> 9月</li>
-        <li class="oct">10月</li>
-        <li class="nov">11月</li>
-        <li class="dec">12月</li>
+    <ul class="season">
+        <li class="<?php
+                    if (in_array("7", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 7月</li>
+        <li class="<?php
+                    if (in_array("8", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 8月</li>
+        <li class="<?php
+                    if (in_array("9", $season_array)) {
+                      echo "season_mark";
+                    } ?>"> 9月</li>
+        <li class="<?php
+                    if (in_array("10", $season_array)) {
+                      echo "season_mark";
+                    } ?>">10月</li>
+        <li class="<?php
+                    if (in_array("11", $season_array)) {
+                      echo "season_mark";
+                    } ?>">11月</li>
+        <li class="<?php
+                    if (in_array("12", $season_array)) {
+                      echo "season_mark";
+                    } ?>">12月</li>
     </ul>
 
     <div class="farm">
