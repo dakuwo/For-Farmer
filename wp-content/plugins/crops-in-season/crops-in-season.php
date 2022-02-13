@@ -101,7 +101,7 @@ class CropsInSeason
       'manage_options',
       'mylist',
       function () use ($table) {
-        $table->prepare_crops();
+        $table->prepare_items();
 
         $page = esc_attr(isset($_GET['page']) ? (string)$_GET['page'] : '');
 
@@ -143,6 +143,9 @@ class CropsInSeason
   /** 農作物情報画面の表示 */
   function show_about_plugin()
   {
+
+
+
 ?>
 
     <div class="wrap">

@@ -1,6 +1,5 @@
 <?php
-
-class MyCrops
+class MyItem
 {
     private $id;
     private $name;
@@ -57,15 +56,15 @@ class MyCrops
     }
 }
 
-class MyCropsInfo
+class MyItemInfo
 {
     private $id;
-    private $crops;
+    private $items;
     private $type;
 
-    public function getCrops()
+    public function getItems()
     {
-        return $this->crops;
+        return $this->items;
     }
 
     public function getType()
@@ -73,22 +72,22 @@ class MyCropsInfo
         return $this->type;
     }
 
-    public function __construct($type, $crops)
+    public function __construct($type, $items)
     {
         $this->type = $type;
-        $this->items = $crops;
+        $this->items = $items;
     }
 
     public static function createDmyData()
     {
-        return new MyCropsInfo(
+        return new MyItemInfo(
             '農作物',
             [
-                new MyCrops(1, 'ほうれん草', 'おいしいよ。', '1,11,12', 'organic', '太陽農園', '鈴木'),
-                new MyCrops(2, '玉ねぎ', '辛くないよ！', '1,2,3,9,10,11,12', 'organic', 'シャキシャキファーム', '田中'),
-                new MyCrops(3, '大根', '煮込み料理にどうぞ。', '1,2,10,11,12', 'organic', 'もくもくファーム', '伊賀'),
-                new MyCrops(4, 'ピーマン', '甘いよ。', '6,7,8,9', 'organic', '太陽農園', '鈴木'),
-                new MyCrops(5, '人参', 'カレーにどうぞ。', '1,2,9,10,11,12', 'organic', 'もくもくファーム', '佐藤')
+                new MyItem(1, 'ほうれん草', 'おいしいよ。', '1,11,12', 'organic', '太陽農園', '鈴木'),
+                new MyItem(2, '玉ねぎ', '辛くないよ！', '1,2,3,9,10,11,12', 'organic', 'シャキシャキファーム', '田中'),
+                new MyItem(3, '大根', '煮込み料理にどうぞ。', '1,2,10,11,12', 'organic', 'もくもくファーム', '伊賀'),
+                new MyItem(4, 'ピーマン', '甘いよ。', '6,7,8,9', 'organic', '太陽農園', '鈴木'),
+                new MyItem(5, '人参', 'カレーにどうぞ。', '1,2,9,10,11,12', 'organic', 'もくもくファーム', '佐藤')
             ]
         );
     }
@@ -106,27 +105,27 @@ class MyListTable extends WP_List_Table
         );
     }
 
-    public function prepare_crops()
+    public function prepare_items()
     {
-        $info = MyCropsInfo::createDmyData();
-        $this->items = $info->getCrops();
+        $info = MyItemInfo::createDmyData();
+        $this->crops = $info->getItems();
 
         // ソート実験用に農作物を追加
         $idCnt = 5;
-        $this->items[] = new MyCrops(++$idCnt, 'レタス', 'サラダにどうぞ。', '1,2,3,4,5,6,7,8,9,10,11,12', 'organic', 'シャキシャキファーム', '田中');
-        $this->items[] = new MyCrops(++$idCnt, '白菜', '鍋にどうぞ。', '1,2,10,11,12', 'organic', '太陽農園', '鈴木');
-        $this->items[] = new MyCrops(++$idCnt, 'エンドウ豆', 'つまみにどうぞ。', '3,4,5,6', 'organic', '太陽農園', '鈴木');
-        $this->items[] = new MyCrops(++$idCnt, 'ごぼう', 'きんぴらにどうぞ', '11,12', 'organic', 'もくもくファーム', '佐藤');
+        $this->items[] = new MyItem(++$idCnt, 'レタス', 'サラダにどうぞ。', '1,2,3,4,5,6,7,8,9,10,11,12', 'organic', 'シャキシャキファーム', '田中');
+        $this->items[] = new MyItem(++$idCnt, '白菜', '鍋にどうぞ。', '1,2,10,11,12', 'organic', '太陽農園', '鈴木');
+        $this->items[] = new MyItem(++$idCnt, 'エンドウ豆', 'つまみにどうぞ。', '3,4,5,6', 'organic', '太陽農園', '鈴木');
+        $this->items[] = new MyItem(++$idCnt, 'ごぼう', 'きんぴらにどうぞ', '11,12', 'organic', 'もくもくファーム', '佐藤');
 
 
         /*
         // 検索
         $s = isset($_REQUEST['s']) ? (string)$_REQUEST['s'] : '';
         if (!empty($s)) {
-            $this->items = array_filter($this->items, function ($item) use ($s) {
+            $this->cropss = array_filter($this->cropss, function ($crops) use ($s) {
                 return
-                    strpos($item->getName(), $s) ||
-                    strpos($item->getDescription(), $s);
+                    strpos($crops->getName(), $s) ||
+                    strpos($crops->getDescription(), $s);
             });
         }
 
@@ -142,18 +141,18 @@ class MyListTable extends WP_List_Table
         $orderDir = $order === 'asc' ? 1 : -1;
 
         $fnames = [
-            'id' => function ($item) {
-                return $item->getId();
+            'id' => function ($crops) {
+                return $crops->getId();
             },
-            'price' => function ($item) {
-                return $item->getPrice();
+            'price' => function ($crops) {
+                return $crops->getPrice();
             }
         ];
 
         $getter = isset($fnames[$orderby]) ? $fnames[$orderby] : null;
         if ($getter) {
             usort(
-                $this->items,
+                $this->crops,
                 function ($a, $b) use ($getter, $sort, $orderDir) {
                     return $sort($getter($a), $getter($b), $orderDir);
                 }
@@ -165,8 +164,8 @@ class MyListTable extends WP_List_Table
         /*
         // ページネーションを使う場合は設定
         $this->set_pagination_args([
-            'total_items' => count($this->items),
-            //'total_pages' => 5, //設定してないと、ceil(total_items / per_page)
+            'total_crops' => count($this->crops),
+            //'total_pages' => 5, //設定してないと、ceil(total_crops / per_page)
             'per_page' => 2
         ]);
 
@@ -180,8 +179,8 @@ class MyListTable extends WP_List_Table
 
 
         // ページネーションを独自に計算
-        $this->items = array_slice(
-            $this->items,
+        $this->crops = array_slice(
+            $this->crops,
             $per_page * ($paged - 1),
             $per_page
         );
@@ -203,48 +202,48 @@ class MyListTable extends WP_List_Table
         ];
     }
 
-    protected function column_default($crops, $name)
+    protected function column_default($item, $name)
     {
         switch ($name) {
             case 'id':
-                return (string)(int)$crops->getId();
+                return (string)(int)$item->getId();
             case 'name':
-                return esc_html($crops->getName());
+                return esc_html($item->getName());
             case 'introduction':
-                return esc_html($crops->getIntroduction());
+                return esc_html($item->getIntroduction());
             case 'season':
-                return esc_html($crops->getSeason());
+                return esc_html($item->getSeason());
             case 'category':
-                return esc_html($crops->getCategory());
+                return esc_html($item->getCategory());
             case 'farm':
-                return esc_html($crops->getFarm());
+                return esc_html($item->getFarm());
             case 'farmer':
-                return esc_html($crops->getFarmer());
+                return esc_html($item->getFarmer());
         }
     }
 
-    protected function column_cb($crops)
+    protected function column_cb($item)
     {
-        $id = (int)$crops->getId();
+        $id = (int)$item->getId();
         return "<input type=\"checkbox\" name=\"checked[]\" value=\"{$id}\" />";
     }
 
 
-    protected function _column_description($crops, $classes, $data, $primary)
+    protected function _column_description($item, $classes, $data, $primary)
     {
-        $desc = esc_html($crops->getIntroduction());
+        $desc = esc_html($item->getIntroduction());
         return "<td class=\" {$classes}\" {$data}><strong>{$desc}</strong></td>";
     }
 
-    protected function column_name($crops)
+    protected function column_name($item)
     {
-        $name = esc_html($crops->getName());
+        $name = esc_html($item->getName());
         return "<strong>{$name}</strong>";
     }
 
 
 
-    protected function handle_row_actions($crops, $column_name, $primary)
+    protected function handle_row_actions($item, $column_name, $primary)
     {
         if ($column_name === $primary) {
             $actions = [
@@ -256,21 +255,21 @@ class MyListTable extends WP_List_Table
         }
     }
 
-    protected function column_season($crops)
+    protected function column_season($item)
     {
-        $season = esc_html($crops->getSeason());
+        $season = esc_html($item->getSeason());
         return "<strong>{$season}</strong>";
     }
 
-    protected function column_farm($crops)
+    protected function column_farm($item)
     {
-        $farm = esc_html($crops->getFarm());
+        $farm = esc_html($item->getFarm());
         return "<strong>{$farm}</strong>";
     }
 
-    protected function column_farmer($crops)
+    protected function column_farmer($item)
     {
-        $farmer = esc_html($crops->getFarmer());
+        $farmer = esc_html($item->getFarmer());
         return "<strong>{$farmer}</strong>";
     }
 
@@ -300,12 +299,11 @@ class MyListTable extends WP_List_Table
             'sort' => '<a href="?page=mylist&orderby=price&order=desc">高い順！</a>'
         ];
     }
-
+*/
     public function _js_vars()
     {
         echo '<script type="text/javascript">
 test = "abcdefg";
 </script>';
     }
-    */
 }
