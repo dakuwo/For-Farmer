@@ -9,47 +9,25 @@
  * License: GPL2
  */
 
+// activate
+register_activation_hook(__FILE__, 'create_data_table');
 
+// deactivate
+register_deactivation_hook(__FILE__, 'drop_data_table');
 
-/* initial */
-/*
-add_action('init', 'CIS_DB::init');
-
-class CIS_DB
+// Create table when activate
+function create_data_table()
 {
-    //
-    const VERSION   = '1.0';                           //self::VERSION
-    const PLUGIN_ID = 'cis';                           //self::PLUGIN_ID
-    const PLUGIN_DB = self::PLUGIN_ID . '-data-table'; //self::PLUGIN_DB
-    //
+    global $wpdb;
+    global $db_version;
 
-    static function init()
-    {
-        return new self();
-    }
+    $db_version = '1.0';
 
-    function __construct()
-    {
-        // activate
-        register_activation_hook(__FILE__, [$this, 'create_data_table']);
+    $table_name = $wpdb->prefix . 'cis_data';
 
-        // deactivate
-        register_deactivation_hook(__FILE__, [$this, 'drop_data_table']);
-    }
+    $charset_collate = $wpdb->get_charset_collate();
 
-    // Create table when activate
-    function create_data_table()
-    {
-        global $wpdb;
-        global $db_version;
-
-        $db_version = '1.0';
-
-        $table_name = $wpdb->prefix . self::PLUGIN_DB;
-
-        $charset_collate = $wpdb->get_charset_collate();
-
-        $sql = "CREATE TABLE $table_name (
+    $sql = "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name tinytext NOT NULL,
             introduction text NOT NULL,
@@ -61,28 +39,55 @@ class CIS_DB
             UNIQUE KEY id (id)
         ) $charset_collate;";
 
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
 
-        add_option('db_version', $db_version);
-    }
-
-
-    // Delete table when deactivate
-    function drop_data_table()
-    {
-        global $wpdb;
-        $table_name = $wpdb->prefix . self::PLUGIN_DB;
-        $sql = "DROP TABLE IF EXISTS $table_name;";
-        $wpdb->query($sql);
-        delete_option("db_version");
-    }
+    add_option('db_version', $db_version);
 }
-*/
+
+
+// Delete table when deactivate
+function drop_data_table()
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'cis_data';
+    $sql = "DROP TABLE IF EXISTS $table_name;";
+    $wpdb->query($sql);
+    delete_option("db_version");
+}
+
 
 
 if (is_admin()) {
     new CIS_WP_List_Table();
+}
+
+
+//Push add button
+if (isset($_POST['addition'])) {
+
+    global $wpdb;
+
+    $name = $_POST['name'];
+    $introduction = $_POST['introduction'];
+    $season = implode(",", $_POST['season']);
+    $category = $_POST['category'];
+    $farm = $_POST['farm'];
+    $farmer = $_POST['farmer'];
+
+    $table_name = $wpdb->prefix . 'cis_data';
+
+    $wpdb->insert(
+        $table_name,
+        array(
+            'name' => $name,
+            'introduction' => $introduction,
+            'season' => $season,
+            'category' => $category,
+            'farm' => $farm,
+            'farmer' => $farmer,
+        )
+    );
 }
 
 /**
@@ -95,13 +100,6 @@ class CIS_WP_List_Table
      */
     public function __construct()
     {
-        // activate
-        //register_activation_hook(__FILE__, [$this, 'create_data_table']);
-
-        // deactivate
-        //register_deactivation_hook(__FILE__, [$this, 'drop_data_table']);
-
-        // admin
         add_action('admin_menu', [$this, 'add_menu_cis_list_table_page']);
     }
 
@@ -263,7 +261,7 @@ class CIS_List_Table extends WP_List_Table
         $data = $this->table_data();
         usort($data, array(&$this, 'sort_data'));
 
-        $perPage = 2;
+        $perPage = 5;
         $currentPage = $this->get_pagenum();
         $totalItems = count($data);
 
@@ -286,6 +284,7 @@ class CIS_List_Table extends WP_List_Table
     public function get_columns()
     {
         $columns = array(
+            'cb'           => 'checkbox',
             'id'           => 'ID',
             'name'         => 'Name',
             'introduction' => 'Introduction',
@@ -315,7 +314,24 @@ class CIS_List_Table extends WP_List_Table
      */
     public function get_sortable_columns()
     {
-        return array('name' => array('name', false));
+        return array('id' => array('id', false));
+    }
+
+    /**
+     * Define the sortable columns
+     *
+     * @return Array
+     */
+    public function handle_row_actions($item, $column_name, $primary)
+    {
+        if ($column_name === $primary) {
+            $actions = [
+                'edit' => '<a href="/">編集</a>',
+                'delete' => '<a href="/">削除</a>'
+            ];
+
+            return $this->row_actions($actions);
+        }
     }
 
     /**
@@ -327,16 +343,25 @@ class CIS_List_Table extends WP_List_Table
     {
         $data = array();
 
-        $data[] = array(
-            'id'           => 1,
-            'name'         => '大根',
-            'introduction' => '煮込み料理にどうぞ。',
-            'season'       => '1,2,10,11,12',
-            'category'     => 'organic',
-            'farm'         => 'もくもくファーム',
-            'farmer'       => '田中'
-        );
-
+        for ($i = 1; $i <= 50; $i++) {
+            if (current_user_can('administrator') || current_user_can('editor') || current_user_can('author')) :
+                global $wpdb;
+                $table_name = $wpdb->prefix . 'cis_data';
+                $query = "SELECT * FROM $table_name WHERE id='$i' ORDER BY ID LIMIT 40;";
+                $results = $wpdb->get_results($query);
+                foreach ($results as $row) {
+                    $data[] = array(
+                        'id'           => $i,
+                        'name'         => $row->name,
+                        'introduction' => $row->introduction,
+                        'season'       => $row->season,
+                        'category'     => $row->category,
+                        'farm'         => $row->farm,
+                        'farmer'       => $row->farmer
+                    );
+                }
+            endif;
+        }
         return $data;
     }
 
@@ -364,6 +389,16 @@ class CIS_List_Table extends WP_List_Table
                 return print_r($item, true);
         }
     }
+
+
+
+    //木田さん
+    public function column_cb($item)
+    {
+        $id = (int)$item;
+        return "<input type=\"checkbox\" name=\"checked[]\" value=\"{$id}\" />";
+    }
+
 
     /**
      * Allows you to sort the data by the variables set in the $_GET
@@ -397,42 +432,13 @@ class CIS_List_Table extends WP_List_Table
     }
 }
 
-
-//Push add button
-if (isset($_POST['addition'])) {
-
-    global $wpdb;
-
-    $name = $_POST['name'];
-    $introduction = $_POST['introduction'];
-    $season = implode(",", $_POST['season']);
-    $category = $_POST['category'];
-    $farm = $_POST['farm'];
-    $farmer = $_POST['farmer'];
-
-    $table_name = $wpdb->prefix . 'cis-data-table';
-
-    $wpdb->insert(
-        $table_name,
-        array(
-            'name' => $name,
-            'introduction' => $introduction,
-            'season' => $season,
-            'category' => $category,
-            'farm' => $farm,
-            'farmer' => $farmer,
-        )
-    );
-}
-
-
 // Shortcode
 add_shortcode('cis', 'display_crops_data');
 
 function display_crops_data($atts)
 {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'cis-data-table';
+    $table_name = $wpdb->prefix . 'cis_data';
     $query = "SELECT * FROM $table_name WHERE id='$atts[0]' ORDER BY ID LIMIT 40;";
     $results = $wpdb->get_results($query);
     foreach ($results as $row) {
