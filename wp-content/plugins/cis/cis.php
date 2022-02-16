@@ -121,8 +121,8 @@ class CIS_WP_List_Table
 
         add_submenu_page(
             'cis-list', // parent slug
-            'Crops List', // page title
-            'Crops List', // menu title
+            '農作物一覧', // page title
+            '農作物一覧', // menu title
             'manage_options', // capability
             'cis-list', // slug
             [$this, 'list_table_page'] //callback
@@ -130,11 +130,20 @@ class CIS_WP_List_Table
 
         add_submenu_page(
             'cis-list', // parent slug
-            'New Addition', // page title
-            'New Addition', // menu title
+            '新規追加', // page title
+            '新規追加', // menu title
             'manage_options', // capability
-            'cis-list-addition', // slug
-            [$this, 'list_addition_page'] //callback
+            'cis-list-add', // slug
+            [$this, 'list_add_page'] //callback
+        );
+
+        add_submenu_page(
+            '', // parent slug
+            '編集', // page title
+            '編集', // menu title
+            'manage_options', // capability
+            'cis-list-edit', // slug
+            [$this, 'list_edit_page'] //callback
         );
     }
 
@@ -150,22 +159,99 @@ class CIS_WP_List_Table
 ?>
         <div class="wrap">
             <div id="icon-users" class="icon32"></div>
-            <h2>Crops List</h2>
+            <h2>農作物一覧</h2>
             <h3>Shotecode</h3>
             <p>農作物情報を元に旬の農作物の紹介ページを作り、ショートコードとして利用できます。
-                <br>（例）[cis 〇]　〇＝ID番号(半角)
+                <br>[cis 〇]
+                <br>補足：〇＝ID番号(半角)
             </p>
             <?php $CISListTable->display(); ?>
         </div>
     <?php
     }
 
-    public function list_addition_page()
+    public function list_add_page()
     {
     ?>
 
         <div class="wrap">
-            <h2>New Addition</h2>
+            <h2>新規追加</h2>
+
+            <form action="" method='post' id="">
+
+                <?php // ②：nonceの設定 
+                ?>
+                <?php wp_nonce_field('cis-nonce-action', 'cis-nonce-key') ?>
+
+                <p>
+                    <label for="name">Name：　</label>
+                    <input type="text" name="name" placeholder="例）野菜" value="" />
+                </p>
+
+                <p>
+                    <label for="introduction">Introduction：　</label>
+                    <textarea id="introduction" name="introduction" placeholder="例）農作物を紹介します。" value="" minlength="0" maxlength="30"></textarea>
+                </p>
+
+                <P>
+                    <label for="season">Season：　</label>
+                    <input type="checkbox" name="season[]" value="1"> 1月　
+                    <input type="checkbox" name="season[]" value="2"> 2月　
+                    <input type="checkbox" name="season[]" value="3"> 3月　
+                    <input type="checkbox" name="season[]" value="4"> 4月　
+                    <input type="checkbox" name="season[]" value="5"> 5月　
+                    <input type="checkbox" name="season[]" value="6"> 6月　
+                    <input type="checkbox" name="season[]" value="7"> 7月　
+                    <input type="checkbox" name="season[]" value="8"> 8月　
+                    <input type="checkbox" name="season[]" value="9"> 9月　
+                    <input type="checkbox" name="season[]" value="10"> 10月　
+                    <input type="checkbox" name="season[]" value="11"> 11月　
+                    <input type="checkbox" name="season[]" value="12"> 12月　
+                </P>
+
+                <P>
+                    <label for="category">Category：　</label>
+                    <select name="category">
+                        <option value="">選択して下さい</option>
+                        <option value="null">表示なし</option>
+                        <option value="organic">オーガニック</option>
+                    </select>
+                </p>
+
+                <P>
+                    <label for="crops-image">crops's Image　</label>
+                    <input type="file" name="crops-image" accept="image/png, image/jpeg">
+                </P>
+
+                <p>
+                    <label for="farm">Farm：　</label>
+                    <input type="text" name="farm" placeholder="例）○○農園" value="" />
+                </p>
+
+                <p>
+                    <label for="farmer">Farmer：　</label>
+                    <input type="text" name="farmer" placeholder="例）栽培者" value="" />
+                </p>
+
+                <P>
+                    <label for="farmer-image">Farmer's Image　</label>
+                    <input type="file" name="farmer-image" accept="image/png, image/jpeg">
+                </P>
+
+                <p><input type='submit' name='addition' value='Addition' class='button button-primary button-large'></p>
+
+            </form>
+
+        </div>
+    <?php
+    }
+
+    public function list_edit_page()
+    {
+    ?>
+
+        <div class="wrap">
+            <h2>編集</h2>
 
             <form action="" method='post' id="">
 
@@ -284,7 +370,6 @@ class CIS_List_Table extends WP_List_Table
     public function get_columns()
     {
         $columns = array(
-            'cb'           => 'checkbox',
             'id'           => 'ID',
             'name'         => 'Name',
             'introduction' => 'Introduction',
@@ -326,7 +411,7 @@ class CIS_List_Table extends WP_List_Table
     {
         if ($column_name === $primary) {
             $actions = [
-                'edit' => '<a href="/">編集</a>',
+                'edit' => '<a href="/wp-admin/admin.php?page=cis-list-edit">編集</a>',
                 'delete' => '<a href="/">削除</a>'
             ];
 
@@ -389,16 +474,6 @@ class CIS_List_Table extends WP_List_Table
                 return print_r($item, true);
         }
     }
-
-
-
-    //木田さん
-    public function column_cb($item)
-    {
-        $id = (int)$item;
-        return "<input type=\"checkbox\" name=\"checked[]\" value=\"{$id}\" />";
-    }
-
 
     /**
      * Allows you to sort the data by the variables set in the $_GET
