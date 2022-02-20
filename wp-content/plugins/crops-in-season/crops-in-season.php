@@ -387,8 +387,8 @@ function cis_admin_menu()
 
     add_submenu_page(
         'cropses',
-        __('Cropses', 'cis_data'),
-        __('Cropses', 'cis_data'),
+        __('農作物一覧', 'cis_data'),
+        __('農作物一覧', 'cis_data'),
         'activate_plugins',
         'cropses',
         'cis_cropses_page_handler'
@@ -396,8 +396,8 @@ function cis_admin_menu()
 
     add_submenu_page(
         'cropses',
-        __('Add new', 'cis_data'),
-        __('Add new', 'cis_data'),
+        __('新規追加', 'cis_data'),
+        __('新規追加', 'cis_data'),
         'activate_plugins',
         'cropses_form',
         'cis_cropses_form_page_handler'
@@ -424,9 +424,9 @@ function cis_cropses_page_handler()
 
         <div class="icon32 icon32-posts-post" id="icon-edit"><br></div>
         <h2>
-            <?php _e('Cropses', 'cis_data') ?>
+            <?php _e('農作物一覧', 'cis_data') ?>
             <a class="add-new-h2" href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=cropses_form'); ?>">
-                <?php _e('Add new', 'cis_data') ?>
+                <?php _e('新規追加', 'cis_data') ?>
             </a>
         </h2>
         <?php echo $message; ?>
@@ -506,15 +506,15 @@ function cis_cropses_form_page_handler()
         }
     }
 
-    add_meta_box('cropses_form_meta_box', 'Crops data', 'cis_cropses_form_meta_box_handler', 'crops', 'normal', 'default');
+    add_meta_box('cropses_form_meta_box', '農作物情報', 'cis_cropses_form_meta_box_handler', 'crops', 'normal', 'default');
 
 ?>
     <div class="wrap">
         <div class="icon32 icon32-posts-post" id="icon-edit"><br></div>
         <h2>
-            <?php _e('Cropses', 'cis_data') ?>
+            <?php _e('農作物', 'cis_data') ?>
             <a class="add-new-h2" href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=cropses'); ?>">
-                <?php _e('back to list', 'cis_data') ?>
+                <?php _e('一覧に戻る', 'cis_data') ?>
             </a>
         </h2>
 
@@ -566,7 +566,7 @@ function cis_cropses_form_meta_box_handler($item)
                     <label for="introduction"><?php _e('紹介文', 'cis_data') ?></label>
                 </th>
                 <td>
-                    <textarea id="introduction" name="introdution" style="width: 95%" value="<?php echo esc_attr($item['introduction']) ?>" size="50" class="code" placeholder="<?php _e('農作物を紹介します。', 'cis_data') ?>" required></textarea>
+                    <textarea id="introduction" name="introduction" style="width: 95%" size="50" class="code" placeholder="<?php _e('農作物を紹介します。', 'cis_data') ?>" required><?php echo esc_attr($item['introduction']) ?></textarea>
                 </td>
             </tr>
             <tr class="form-field">
@@ -574,7 +574,22 @@ function cis_cropses_form_meta_box_handler($item)
                     <label for="season"><?php _e('旬', 'cis_data') ?></label>
                 </th>
                 <td>
-                    <input id="season" name="season" type="text" style="width: 95%" value="<?php echo esc_attr($item['season']) ?>" size="50" class="code" placeholder="<?php _e('旬', 'cis_data') ?>" required>
+                    <?php $season_array = explode(',', esc_attr($item['season'])) ?>
+                    <input type="checkbox" name="season_array[]" value="1" <?php if (in_array('1', $season_array)) echo 'checked' ?>>1月　
+                    <input type="checkbox" name="season_array[]" value="2" <?php if (in_array('2', $season_array)) echo 'checked' ?>>2月　
+                    <input type="checkbox" name="season_array[]" value="3" <?php if (in_array('3', $season_array)) echo 'checked' ?>>3月　
+                    <input type="checkbox" name="season_array[]" value="4" <?php if (in_array('4', $season_array)) echo 'checked' ?>>4月　
+                    <input type="checkbox" name="season_array[]" value="5" <?php if (in_array('5', $season_array)) echo 'checked' ?>>5月　
+                    <input type="checkbox" name="season_array[]" value="6" <?php if (in_array('6', $season_array)) echo 'checked' ?>>6月　
+                    <input type="checkbox" name="season_array[]" value="7" <?php if (in_array('7', $season_array)) echo 'checked' ?>>7月　
+                    <input type="checkbox" name="season_array[]" value="8" <?php if (in_array('8', $season_array)) echo 'checked' ?>>8月　
+                    <input type="checkbox" name="season_array[]" value="9" <?php if (in_array('9', $season_array)) echo 'checked' ?>>9月　
+                    <input type="checkbox" name="season_array[]" value="10" <?php if (in_array('10', $season_array)) echo 'checked' ?>>10月　
+                    <input type="checkbox" name="season_array[]" value="11" <?php if (in_array('11', $season_array)) echo 'checked' ?>>11月　
+                    <input type="checkbox" name="season_array[]" value="12" <?php if (in_array('12', $season_array)) echo 'checked' ?>>12月　
+                    <?php if (isset($_POST['season_array'])) {
+                        $item['season'] = implode(",", $_POST['season_array']);
+                    } ?>
                 </td>
             </tr>
             <tr class="form-field">
@@ -582,7 +597,11 @@ function cis_cropses_form_meta_box_handler($item)
                     <label for="category"><?php _e('カテゴリ', 'cis_data') ?></label>
                 </th>
                 <td>
-                    <input id="category" name="category" type="text" style="width: 95%" value="<?php echo esc_attr($item['category']) ?>" size="50" class="code" placeholder="<?php _e('カテゴリ', 'cis_data') ?>" required>
+                    <select id="category" name="category">
+                        <option value="">選択して下さい</option>
+                        <option value="no-display" <?php if (esc_attr($item['category']) == "no-display") echo 'selected' ?>>表示なし</option>
+                        <option value="organic" <?php if (esc_attr($item['category']) == "organic") echo 'selected' ?>>オーガニック</option>
+                    </select>
                 </td>
             </tr>
             <tr class="form-field">
