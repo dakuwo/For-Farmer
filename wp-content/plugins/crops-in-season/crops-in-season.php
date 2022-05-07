@@ -277,7 +277,8 @@ class CIS_List_Table extends WP_List_Table
             'season'       => __('旬', 'cis_data'),
             'category'     => __('カテゴリ', 'cis_data'),
             'farm'         => __('農園', 'cis_data'),
-            'farmer'       => __('農家', 'cis_data')
+            'farmer'       => __('農家', 'cis_data'),
+            'url'          => __('画像', 'cis_data')
         );
         return $columns;
     }
@@ -293,6 +294,7 @@ class CIS_List_Table extends WP_List_Table
             'category'     => array('category', false),
             'farm'         => array('farm', false),
             'farmer'       => array('farmer', false),
+            'url'          => array('url', false)
         );
         return $sortable_columns;
     }
@@ -469,7 +471,8 @@ function cis_cropses_form_page_handler()
         'season'       => '',
         'category'     => '',
         'farm'         => '',
-        'farmer'       => ''
+        'farmer'       => '',
+        'url'        => ''
     );
 
     if (isset($_REQUEST['nonce']) && wp_verify_nonce($_REQUEST['nonce'], basename(__FILE__))) {
@@ -549,6 +552,14 @@ function cis_cropses_form_page_handler()
 
 function cis_cropses_form_meta_box_handler($item)
 {
+    wp_enqueue_script( 'jQuery', 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js');
+    wp_enqueue_script(
+        'crop',
+        plugins_url('crop.js', __FILE__ ),
+        array( 'jQuery' ),
+        filemtime( plugin_dir_path( __FILE__ ) . '/crop.js' ),
+        false
+    );
 ?>
 
     <table cellspacing="2" cellpadding="5" style="width: 100%;" class="form-table">
@@ -619,6 +630,26 @@ function cis_cropses_form_meta_box_handler($item)
                 <td>
                     <input id="farmer" name="farmer" type="text" style="width: 95%" value="<?php echo esc_attr($item['farmer']) ?>" size="50" class="code" placeholder="<?php _e('農家', 'cis_data') ?>" required>
                 </td>
+            </tr>
+            <tr class="form-field">
+                <?php
+                if( $image = wp_get_attachment_image_src( $item['url'] ) ) {
+                echo '<a href="#" class="misha-upl"><img src="' . $image[0] . '" /></a>
+                <a href="#" class="misha-rmv">Remove image</a>
+                <input type="hidden" name="misha-img" value="' . $item['url'] . '">';
+
+                } else {
+
+                echo '
+                <th scope="row">
+                    <label for="url">画像</label>
+                </th>
+                <td>
+                    <a href="#" class="misha-upl">Upload image</a>
+                    <a href="#" class="misha-rmv" style="display:none">Remove image</a>
+                    <input type="hidden" name="url" value="">
+                </td>';
+                } ?>
             </tr>
         </tbody>
     </table>
